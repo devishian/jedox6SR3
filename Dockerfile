@@ -1,15 +1,50 @@
-FROM debian
+FROM ubuntu:16.04
 
-RUN apt-get install libc6-i386
-RUN dpkg --add-architecture i386
-RUN apt-get update
-RUN apt-get install libfreetype6:i386
-RUN apt-get install libfontconfig1:i386
-RUN apt-get install libstdc++6:i386
+RUN apt-get update \
+    && apt-get install -y \
+       bash \
+	   tree \
+	   wget \
+	   sudo \
+	   vim \
+	   iputils-ping \
+	   less \
+	   vim \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /usr/share/jedox
-RUN curl http://www.jedox.com/downloads/software/6/sr3/jedox_6_0_sr3.tar | tar xvz -C /usr/share/jedox
-RUN install.sh
+# add folder share
+VOLUME "/share"
 
-CMD ["/user/share/jedox/jedox-suite.sh start"]
-EXPOSE 80 7775 7777 4242
+# change to user root
+USER root
+
+# add rights
+RUN chmod -R 777 /tmp
+
+# download software
+ADD http://www.jedox.com/downloads/software/6/sr3/jedox_6_0_sr3.tar /tmp/
+
+# extract software
+RUN tar -xvf /tmp/jedox_6_0_sr3.tar -C /tmp/
+
+# change to working directory /tmp
+WORKDIR /tmp
+
+# install software
+RUN ./install.sh --automatic
+
+# cleanup
+RUN rm -rfv /tmp/*
+RUN rm -rfv /tmp/.lic_agr_7.1
+
+# change to working directory
+WORKDIR /
+
+# expose ports
+EXPOSE 80
+EXPOSE 7777
+EXPOSE 7775
+
+# add entrypoint
+# ENTRYPOINT /opt/jedox/ps/jedox-suite.sh start && /bin/bash
